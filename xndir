@@ -1,0 +1,145 @@
+.model small
+.stack 64
+.data
+array db 1,18,36,4
+      db 5,6,7,80      
+      db 9,13,7,1
+      
+row db 3
+column db 4
+
+.code
+main proc far
+    mov ax, @data
+    mov ds,ax
+    
+    xor ax,ax    
+    xor bx,bx    
+    xor cx,cx    
+    xor dx,dx
+    xor si,si
+    xor di,di
+    
+    lea bx,array
+    
+    mov dl,row
+    dec dl
+    mov cl,column
+    
+    jmp COLUMN_LOOP
+    
+ROW_LOOP:
+   dec dl
+   xor di,di
+   mov cl,column
+   
+COLUMN_LOOP:
+   
+    call getelem
+    cmp ah,1
+    je exist
+    
+    inc di
+    loop COLUMN_LOOP
+    jmp nextrow
+    
+exist:
+    inc dh
+    
+nextrow:    
+    inc si
+    cmp dl,0
+    jne ROW_LOOP
+    
+    call print
+    
+    ret
+main endp
+
+getelem proc
+    push bx cx dx si di
+
+    xchg ax,si
+    mul column
+    xchg si,ax
+    add si,di
+    mov dl,[bx+si]
+    call perfect
+    
+    
+    pop di si dx cx bx
+    ret
+getelem endp
+
+perfect proc
+    push bx cx dx si di
+    
+    cmp dl,1
+    je noperf
+    
+    mov al,dl
+   
+    xor ah,ah
+    mov bl,2
+    idiv bl
+    
+    xor ch,ch
+    mov cl,al
+    
+    mov bh,1; այստեղ կպահենք բաժանարարների գումարը և քանի որ բոլոր թվերը բաժանվում են 1-ի վրա անիմաստ իտերացիայից խուսափելու համար գումարը կսկսենք 1-ից
+    mov bl,2; բաժանարարները ստուգելը կսկսենք 2-ից
+    
+loop1:
+    xor ah,ah
+    mov al,dl
+    idiv bl
+    cmp ah,0
+    jne next
+    add bh,bl
+    
+next:
+    inc bl
+    loop loop1
+    
+    cmp bh,dl
+    jne noperf
+    mov ah,1
+    jmp bottom
+    
+noperf:
+    xor ax,ax
+      
+bottom:   
+    pop di si dx cx bx
+    ret
+perfect endp
+
+print proc
+    mov al,dh
+    xor cx,cx
+    
+pushdig:
+    mov bl,10
+    xor ah,ah
+    idiv bl
+    
+    mov bl,ah
+    xor bh,bh
+    push bx
+    inc cx
+  
+    cmp al,0
+    jne pushdig
+    
+    
+print_loop:
+    pop dx
+    add dl,'0'
+    mov ah,2
+    int 21h
+    loop print_loop
+    
+    ret
+print endp
+end main
+    
